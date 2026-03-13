@@ -94,6 +94,64 @@ const MOONSHOT_DEFAULT_COST = {
   cacheWrite: 0,
 };
 
+export const ZAI_CODING_GLOBAL_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
+export const ZAI_CODING_CN_BASE_URL = "https://open.bigmodel.cn/api/coding/paas/v4";
+export const ZAI_GLOBAL_BASE_URL = "https://api.z.ai/api/paas/v4";
+export const ZAI_CN_BASE_URL = "https://open.bigmodel.cn/api/paas/v4";
+export const ZAI_DEFAULT_MODEL_ID = "glm-5";
+const ZAI_DEFAULT_CONTEXT_WINDOW = 204800;
+const ZAI_DEFAULT_MAX_TOKENS = 131072;
+const ZAI_DEFAULT_COST = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+
+const ZAI_MODEL_CATALOG = {
+  "glm-5": { name: "GLM-5", reasoning: true },
+  "glm-4.7": { name: "GLM-4.7", reasoning: true },
+  "glm-4.7-flash": { name: "GLM-4.7 Flash", reasoning: true },
+  "glm-4.7-flashx": { name: "GLM-4.7 FlashX", reasoning: true },
+} as const;
+
+type ZaiCatalogId = keyof typeof ZAI_MODEL_CATALOG;
+
+export function resolveZaiBaseUrl(endpoint?: string): string {
+  switch (endpoint) {
+    case "coding-cn":
+      return ZAI_CODING_CN_BASE_URL;
+    case "global":
+      return ZAI_GLOBAL_BASE_URL;
+    case "cn":
+      return ZAI_CN_BASE_URL;
+    case "coding-global":
+      return ZAI_CODING_GLOBAL_BASE_URL;
+    default:
+      return ZAI_GLOBAL_BASE_URL;
+  }
+}
+
+export function buildZaiModelDefinition(params: {
+  id: string;
+  name?: string;
+  reasoning?: boolean;
+  cost?: ProviderModelConfig["cost"];
+  contextWindow?: number;
+  maxTokens?: number;
+}): ProviderModelConfig {
+  const catalog = ZAI_MODEL_CATALOG[params.id as ZaiCatalogId];
+  return {
+    id: params.id,
+    name: params.name ?? catalog?.name ?? `GLM ${params.id}`,
+    reasoning: params.reasoning ?? catalog?.reasoning ?? true,
+    input: ["text"],
+    cost: params.cost ?? ZAI_DEFAULT_COST,
+    contextWindow: params.contextWindow ?? ZAI_DEFAULT_CONTEXT_WINDOW,
+    maxTokens: params.maxTokens ?? ZAI_DEFAULT_MAX_TOKENS,
+  };
+}
+
 const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/";
 const KIMI_CODING_USER_AGENT = "claude-code/0.1.0";
 const KIMI_CODING_DEFAULT_MODEL_ID = "k2p5";
@@ -301,6 +359,19 @@ export function buildMoonshotProvider(): ProviderConfig {
         contextWindow: MOONSHOT_DEFAULT_CONTEXT_WINDOW,
         maxTokens: MOONSHOT_DEFAULT_MAX_TOKENS,
       },
+    ],
+  };
+}
+
+export function buildZaiProvider(): ProviderConfig {
+  return {
+    baseUrl: ZAI_GLOBAL_BASE_URL,
+    api: "openai-completions",
+    models: [
+      buildZaiModelDefinition({ id: "glm-5" }),
+      buildZaiModelDefinition({ id: "glm-4.7" }),
+      buildZaiModelDefinition({ id: "glm-4.7-flash" }),
+      buildZaiModelDefinition({ id: "glm-4.7-flashx" }),
     ],
   };
 }
