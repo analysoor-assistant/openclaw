@@ -1,4 +1,14 @@
-import { QIANFAN_BASE_URL, QIANFAN_DEFAULT_MODEL_ID } from "../agents/models-config.providers.js";
+import {
+  QIANFAN_BASE_URL,
+  QIANFAN_DEFAULT_MODEL_ID,
+  buildZaiModelDefinition,
+  resolveZaiBaseUrl,
+  ZAI_CODING_CN_BASE_URL,
+  ZAI_CODING_GLOBAL_BASE_URL,
+  ZAI_CN_BASE_URL,
+  ZAI_DEFAULT_MODEL_ID,
+  ZAI_GLOBAL_BASE_URL,
+} from "../agents/models-config.providers.js";
 import type { ModelDefinitionConfig } from "../config/types.js";
 import {
   KILOCODE_DEFAULT_CONTEXT_WINDOW,
@@ -34,26 +44,15 @@ export const KIMI_CODING_MODEL_REF = `kimi-coding/${KIMI_CODING_MODEL_ID}`;
 export { QIANFAN_BASE_URL, QIANFAN_DEFAULT_MODEL_ID };
 export const QIANFAN_DEFAULT_MODEL_REF = `qianfan/${QIANFAN_DEFAULT_MODEL_ID}`;
 
-export const ZAI_CODING_GLOBAL_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
-export const ZAI_CODING_CN_BASE_URL = "https://open.bigmodel.cn/api/coding/paas/v4";
-export const ZAI_GLOBAL_BASE_URL = "https://api.z.ai/api/paas/v4";
-export const ZAI_CN_BASE_URL = "https://open.bigmodel.cn/api/paas/v4";
-export const ZAI_DEFAULT_MODEL_ID = "glm-5";
-
-export function resolveZaiBaseUrl(endpoint?: string): string {
-  switch (endpoint) {
-    case "coding-cn":
-      return ZAI_CODING_CN_BASE_URL;
-    case "global":
-      return ZAI_GLOBAL_BASE_URL;
-    case "cn":
-      return ZAI_CN_BASE_URL;
-    case "coding-global":
-      return ZAI_CODING_GLOBAL_BASE_URL;
-    default:
-      return ZAI_GLOBAL_BASE_URL;
-  }
-}
+export {
+  buildZaiModelDefinition,
+  resolveZaiBaseUrl,
+  ZAI_CODING_CN_BASE_URL,
+  ZAI_CODING_GLOBAL_BASE_URL,
+  ZAI_CN_BASE_URL,
+  ZAI_DEFAULT_MODEL_ID,
+  ZAI_GLOBAL_BASE_URL,
+};
 
 // Pricing per 1M tokens (USD) — https://platform.minimaxi.com/document/Price
 export const MINIMAX_API_COST = {
@@ -81,28 +80,12 @@ export const MOONSHOT_DEFAULT_COST = {
   cacheWrite: 0,
 };
 
-export const ZAI_DEFAULT_COST = {
-  input: 0,
-  output: 0,
-  cacheRead: 0,
-  cacheWrite: 0,
-};
-
 const MINIMAX_MODEL_CATALOG = {
   "MiniMax-M2.5": { name: "MiniMax M2.5", reasoning: true },
   "MiniMax-M2.5-highspeed": { name: "MiniMax M2.5 Highspeed", reasoning: true },
 } as const;
 
 type MinimaxCatalogId = keyof typeof MINIMAX_MODEL_CATALOG;
-
-const ZAI_MODEL_CATALOG = {
-  "glm-5": { name: "GLM-5", reasoning: true },
-  "glm-4.7": { name: "GLM-4.7", reasoning: true },
-  "glm-4.7-flash": { name: "GLM-4.7 Flash", reasoning: true },
-  "glm-4.7-flashx": { name: "GLM-4.7 FlashX", reasoning: true },
-} as const;
-
-type ZaiCatalogId = keyof typeof ZAI_MODEL_CATALOG;
 
 export function buildMinimaxModelDefinition(params: {
   id: string;
@@ -166,26 +149,6 @@ export function buildMistralModelDefinition(): ModelDefinitionConfig {
     cost: MISTRAL_DEFAULT_COST,
     contextWindow: MISTRAL_DEFAULT_CONTEXT_WINDOW,
     maxTokens: MISTRAL_DEFAULT_MAX_TOKENS,
-  };
-}
-
-export function buildZaiModelDefinition(params: {
-  id: string;
-  name?: string;
-  reasoning?: boolean;
-  cost?: ModelDefinitionConfig["cost"];
-  contextWindow?: number;
-  maxTokens?: number;
-}): ModelDefinitionConfig {
-  const catalog = ZAI_MODEL_CATALOG[params.id as ZaiCatalogId];
-  return {
-    id: params.id,
-    name: params.name ?? catalog?.name ?? `GLM ${params.id}`,
-    reasoning: params.reasoning ?? catalog?.reasoning ?? true,
-    input: ["text"],
-    cost: params.cost ?? ZAI_DEFAULT_COST,
-    contextWindow: params.contextWindow ?? 204800,
-    maxTokens: params.maxTokens ?? 131072,
   };
 }
 
