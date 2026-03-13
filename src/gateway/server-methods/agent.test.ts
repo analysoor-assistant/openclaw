@@ -519,6 +519,88 @@ describe("gateway agent handler", () => {
     expect(capturedEntry?.claudeCliSessionId).toBeUndefined();
   });
 
+  it("marks resolved stopReason=error runs as terminal errors", async () => {
+    primeMainAgentRun();
+    mocks.agentCommand.mockResolvedValue({
+      payloads: [{ text: "LLM request failed." }],
+      meta: { durationMs: 100, stopReason: "error" },
+    });
+    const context = makeContext();
+    const respond = vi.fn();
+
+    await invokeAgent(
+      {
+        message: "broken child run",
+        sessionKey: "agent:main:main",
+        idempotencyKey: "test-stopreason-error",
+      },
+      {
+        context,
+        respond,
+        reqId: "test-stopreason-error",
+      },
+    );
+
+    expect(respond).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({
+        runId: "test-stopreason-error",
+        status: "accepted",
+      }),
+      undefined,
+      { runId: "test-stopreason-error" },
+    );
+
+    await vi.waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
+
+    expect(respond.mock.calls[1]?.[1]).toMatchObject({
+      runId: "test-stopreason-error",
+      status: "error",
+      summary: "LLM request failed.",
+    });
+    expect(context.dedupe.get("agent:test-stopreason-error")?.payload).toMatchObject({
+      runId: "test-stopreason-error",
+      status: "error",
+      summary: "LLM request failed.",
+    });
+  });
+
+  it("marks aborted runs as terminal timeouts", async () => {
+    primeMainAgentRun();
+    mocks.agentCommand.mockResolvedValue({
+      payloads: [{ text: "Request timed out before a response was generated." }],
+      meta: { durationMs: 100, aborted: true },
+    });
+    const context = makeContext();
+    const respond = vi.fn();
+
+    await invokeAgent(
+      {
+        message: "slow child run",
+        sessionKey: "agent:main:main",
+        idempotencyKey: "test-aborted-timeout",
+      },
+      {
+        context,
+        respond,
+        reqId: "test-aborted-timeout",
+      },
+    );
+
+    await vi.waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
+
+    expect(respond.mock.calls[1]?.[1]).toMatchObject({
+      runId: "test-aborted-timeout",
+      status: "timeout",
+      summary: "Request timed out before a response was generated.",
+    });
+    expect(context.dedupe.get("agent:test-aborted-timeout")?.payload).toMatchObject({
+      runId: "test-aborted-timeout",
+      status: "timeout",
+      summary: "Request timed out before a response was generated.",
+    });
+  });
+
   it("prunes legacy main alias keys when writing a canonical session entry", async () => {
     mocks.loadSessionEntry.mockReturnValue({
       cfg: {

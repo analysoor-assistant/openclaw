@@ -85,10 +85,18 @@ function createSnapshotFromLifecycleEvent(params: {
   const startedAt =
     typeof data?.startedAt === "number" ? data.startedAt : agentRunStarts.get(runId);
   const endedAt = typeof data?.endedAt === "number" ? data.endedAt : undefined;
-  const error = typeof data?.error === "string" ? data.error : undefined;
+  const stopReason = typeof data?.stopReason === "string" ? data.stopReason : undefined;
+  const endedWithErrorStopReason = phase === "end" && stopReason === "error";
+  const error =
+    typeof data?.error === "string"
+      ? data.error
+      : endedWithErrorStopReason
+        ? "LLM request failed."
+        : undefined;
   return {
     runId,
-    status: phase === "error" ? "error" : data?.aborted ? "timeout" : "ok",
+    status:
+      phase === "error" || endedWithErrorStopReason ? "error" : data?.aborted ? "timeout" : "ok",
     startedAt,
     endedAt,
     error,
