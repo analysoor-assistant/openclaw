@@ -100,12 +100,59 @@ function dispatchAgentRunFromGateway(params: {
   respond: GatewayRequestHandlerOptions["respond"];
   context: GatewayRequestHandlerOptions["context"];
 }) {
+  const resolveResultText = (
+    result: Awaited<ReturnType<typeof agentCommandFromIngress>>,
+  ): string | undefined => {
+    const payloads = Array.isArray(result.payloads) ? result.payloads : [];
+    for (const payload of payloads) {
+      if (!payload || typeof payload !== "object") {
+        continue;
+      }
+      const text =
+        typeof (payload as { text?: unknown }).text === "string"
+          ? (payload as { text: string }).text.trim()
+          : "";
+      if (text) {
+        return text;
+      }
+    }
+    return undefined;
+  };
+
+  const resolveTerminalSnapshot = (
+    result: Awaited<ReturnType<typeof agentCommandFromIngress>>,
+  ): {
+    status: "ok" | "error" | "timeout";
+    summary: string;
+  } => {
+    const stopReason =
+      typeof result.meta?.stopReason === "string" ? result.meta.stopReason : undefined;
+    const resultText = resolveResultText(result);
+    if (result.meta?.aborted === true) {
+      return {
+        status: "timeout",
+        summary: resultText || "LLM request timed out.",
+      };
+    }
+    if (stopReason === "error") {
+      return {
+        status: "error",
+        summary: resultText || "LLM request failed.",
+      };
+    }
+    return {
+      status: "ok",
+      summary: "completed",
+    };
+  };
+
   void agentCommandFromIngress(params.ingressOpts, defaultRuntime, params.context.deps)
     .then((result) => {
+      const terminal = resolveTerminalSnapshot(result);
       const payload = {
         runId: params.runId,
-        status: "ok" as const,
-        summary: "completed",
+        status: terminal.status,
+        summary: terminal.summary,
         result,
       };
       setGatewayDedupeEntry({

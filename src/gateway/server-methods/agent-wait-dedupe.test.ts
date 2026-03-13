@@ -258,6 +258,36 @@ describe("agent wait dedupe helper", () => {
     });
   });
 
+  it("treats payload status=error as terminal even when the dedupe entry itself is ok", () => {
+    const dedupe = new Map();
+    const runId = "run-agent-status-error";
+    setRunEntry({
+      dedupe,
+      kind: "agent",
+      runId,
+      ok: true,
+      payload: {
+        runId,
+        status: "error",
+        summary: "LLM request failed.",
+        startedAt: 12,
+        endedAt: 34,
+      },
+    });
+
+    expect(
+      readTerminalSnapshotFromGatewayDedupe({
+        dedupe,
+        runId,
+      }),
+    ).toEqual({
+      status: "error",
+      startedAt: 12,
+      endedAt: 34,
+      error: "LLM request failed.",
+    });
+  });
+
   it("resolves multiple waiters for the same run id", async () => {
     const dedupe = new Map();
     const runId = "run-multi";

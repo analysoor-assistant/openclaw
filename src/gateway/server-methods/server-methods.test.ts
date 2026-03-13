@@ -27,6 +27,7 @@ describe("waitForAgentJob", () => {
     startedAt: number;
     endedAt: number;
     aborted?: boolean;
+    stopReason?: string;
   }) {
     const runId = `${params.runIdPrefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const waitPromise = waitForAgentJob({ runId, timeoutMs: 1_000 });
@@ -39,7 +40,12 @@ describe("waitForAgentJob", () => {
     emitAgentEvent({
       runId,
       stream: "lifecycle",
-      data: { phase: "end", endedAt: params.endedAt, aborted: params.aborted },
+      data: {
+        phase: "end",
+        endedAt: params.endedAt,
+        aborted: params.aborted,
+        stopReason: params.stopReason,
+      },
     });
 
     return waitPromise;
@@ -68,6 +74,20 @@ describe("waitForAgentJob", () => {
     expect(snapshot?.status).toBe("ok");
     expect(snapshot?.startedAt).toBe(300);
     expect(snapshot?.endedAt).toBe(400);
+  });
+
+  it("maps lifecycle end events with stopReason=error to error", async () => {
+    const snapshot = await runLifecycleScenario({
+      runIdPrefix: "run-stopreason-error",
+      startedAt: 500,
+      endedAt: 600,
+      stopReason: "error",
+    });
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.status).toBe("error");
+    expect(snapshot?.startedAt).toBe(500);
+    expect(snapshot?.endedAt).toBe(600);
+    expect(snapshot?.error).toBe("LLM request failed.");
   });
 
   it("can ignore cached snapshots and wait for fresh lifecycle events", async () => {
