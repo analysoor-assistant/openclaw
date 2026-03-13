@@ -1,11 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { detectZaiEndpoint } from "./zai-endpoint-detect.js";
 
-function makeFetch(map: Record<string, { status: number; body?: unknown }>) {
-  return (async (url: string) => {
-    const entry = map[url];
+type MockResponse = { status: number; body?: unknown };
+
+function makeFetch(map: Record<string, MockResponse>) {
+  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url =
+      typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+    let modelId = "";
+    if (typeof init?.body === "string") {
+      try {
+        const parsed = JSON.parse(init.body) as { model?: unknown };
+        if (typeof parsed.model === "string") {
+          modelId = parsed.model;
+        }
+      } catch {
+        // ignore malformed test payloads
+      }
+    }
+
+    const entry = map[`${url}::${modelId}`] ?? map[url];
     if (!entry) {
-      throw new Error(`unexpected url: ${url}`);
+      throw new Error(`unexpected request: ${url} (${modelId || "no-model"})`);
     }
     const json = entry.body ?? {};
     return new Response(JSON.stringify(json), {
@@ -23,25 +40,35 @@ describe("detectZaiEndpoint", () => {
     }> = [
       {
         responses: {
-          "https://api.z.ai/api/paas/v4/chat/completions": { status: 200 },
+          "https://api.z.ai/api/paas/v4/chat/completions::glm-5": { status: 200 },
         },
         expected: { endpoint: "global", modelId: "glm-5" },
       },
       {
         responses: {
-          "https://api.z.ai/api/paas/v4/chat/completions": {
+          "https://api.z.ai/api/paas/v4/chat/completions::glm-5": {
             status: 404,
             body: { error: { message: "not found" } },
           },
-          "https://open.bigmodel.cn/api/paas/v4/chat/completions": { status: 200 },
+          "https://open.bigmodel.cn/api/paas/v4/chat/completions::glm-5": { status: 200 },
         },
         expected: { endpoint: "cn", modelId: "glm-5" },
       },
       {
         responses: {
-          "https://api.z.ai/api/paas/v4/chat/completions": { status: 404 },
-          "https://open.bigmodel.cn/api/paas/v4/chat/completions": { status: 404 },
-          "https://api.z.ai/api/coding/paas/v4/chat/completions": { status: 200 },
+          "https://api.z.ai/api/paas/v4/chat/completions::glm-5": { status: 404 },
+          "https://open.bigmodel.cn/api/paas/v4/chat/completions::glm-5": { status: 404 },
+          "https://api.z.ai/api/coding/paas/v4/chat/completions::glm-5": { status: 200 },
+        },
+        expected: { endpoint: "coding-global", modelId: "glm-5" },
+      },
+      {
+        responses: {
+          "https://api.z.ai/api/paas/v4/chat/completions::glm-5": { status: 404 },
+          "https://open.bigmodel.cn/api/paas/v4/chat/completions::glm-5": { status: 404 },
+          "https://api.z.ai/api/coding/paas/v4/chat/completions::glm-5": { status: 404 },
+          "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions::glm-5": { status: 404 },
+          "https://api.z.ai/api/coding/paas/v4/chat/completions::glm-4.7": { status: 200 },
         },
         expected: { endpoint: "coding-global", modelId: "glm-4.7" },
       },
