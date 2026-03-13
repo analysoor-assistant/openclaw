@@ -14,6 +14,7 @@ Docs: https://docs.openclaw.ai
 
 ### Fixes
 
+- Telegram/webhook auth: validate the Telegram webhook secret before reading or parsing request bodies, so unauthenticated requests are rejected immediately instead of consuming up to 1 MB first. Thanks @space08.
 - Browser/existing-session: accept text-only `list_pages` and `new_page` responses from Chrome DevTools MCP so live-session tab discovery and new-tab open flows keep working when the server omits structured page metadata.
 - Ollama/reasoning visibility: stop promoting native `thinking` and `reasoning` fields into final assistant text so local reasoning models no longer leak internal thoughts in normal replies. (#45330) Thanks @xi7ang.
 - Cron/isolated sessions: route nested cron-triggered embedded runner work onto the nested lane so isolated cron jobs no longer deadlock when compaction or other queued inner work runs. Thanks @vincentkoc.
