@@ -1,5 +1,13 @@
 # Repository Guidelines
 
+- Personal fork workflow for `analysoor-assistant/openclaw`:
+  - `origin` is the writable remote for all branches, commits, and PRs.
+  - `upstream` is `openclaw/openclaw` and must stay read-only.
+  - Before implementing a bug fix, first check `openclaw/openclaw` issues, PRs, and recent commits for an existing fix.
+  - If an upstream fix exists, port it onto a new branch in `origin` instead of inventing a divergent fix first.
+  - When investigating runtime issues, read config and state from `/Users/pland/.openclaw`.
+  - Never push directly to `openclaw/openclaw`.
+
 - Repo: https://github.com/openclaw/openclaw
 - In chat replies, file references must be repo-root relative only (example: `extensions/bluebubbles/src/channel.ts:80`); never absolute paths or `~/...`.
 - GitHub issues/comments/PR comments: use literal multiline strings or `-F - <<'EOF'` (or $'...') for real newlines; never embed "\\n".
