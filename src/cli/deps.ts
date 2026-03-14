@@ -1,7 +1,7 @@
 import type { sendMessageWhatsApp } from "../channels/web/index.js";
 import type { sendMessageDiscord } from "../discord/send.js";
 import type { sendMessageIMessage } from "../imessage/send.js";
-import type { OutboundSendDeps } from "../infra/outbound/deliver.js";
+import type { OutboundSendDeps } from "../infra/outbound/send-deps.js";
 import type { sendMessageSignal } from "../signal/send.js";
 import type { sendMessageSlack } from "../slack/send.js";
 import type { sendMessageTelegram } from "../telegram/send.js";

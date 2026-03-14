@@ -1,5 +1,6 @@
 import { chunkText } from "../../../auto-reply/chunk.js";
 import { shouldLogVerbose } from "../../../globals.js";
+import { resolveOutboundSendDep } from "../../../infra/outbound/send-deps.js";
 import { sendPollWhatsApp } from "../../../web/outbound.js";
 import { resolveWhatsAppOutboundTarget } from "../../../whatsapp/resolve-outbound-target.js";
 import type { ChannelOutboundAdapter } from "../types.js";
@@ -41,7 +42,10 @@ export const whatsappOutbound: ChannelOutboundAdapter = {
       return { channel: "whatsapp", messageId: "" };
     }
     const send =
-      deps?.sendWhatsApp ?? (await import("../../../web/outbound.js")).sendMessageWhatsApp;
+      resolveOutboundSendDep<typeof import("../../../web/outbound.js").sendMessageWhatsApp>(
+        deps,
+        "whatsapp",
+      ) ?? (await import("../../../web/outbound.js")).sendMessageWhatsApp;
     const result = await send(to, normalizedText, {
       verbose: false,
       cfg,
@@ -53,7 +57,10 @@ export const whatsappOutbound: ChannelOutboundAdapter = {
   sendMedia: async ({ cfg, to, text, mediaUrl, mediaLocalRoots, accountId, deps, gifPlayback }) => {
     const normalizedText = trimLeadingWhitespace(text);
     const send =
-      deps?.sendWhatsApp ?? (await import("../../../web/outbound.js")).sendMessageWhatsApp;
+      resolveOutboundSendDep<typeof import("../../../web/outbound.js").sendMessageWhatsApp>(
+        deps,
+        "whatsapp",
+      ) ?? (await import("../../../web/outbound.js")).sendMessageWhatsApp;
     const result = await send(to, normalizedText, {
       verbose: false,
       cfg,

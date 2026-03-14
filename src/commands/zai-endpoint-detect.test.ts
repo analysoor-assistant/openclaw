@@ -97,4 +97,22 @@ describe("detectZaiEndpoint", () => {
       }
     }
   });
+
+  it("probes an explicit coding endpoint before falling back to glm-4.7", async () => {
+    const detected = await detectZaiEndpoint({
+      apiKey: "sk-test", // pragma: allowlist secret
+      endpoint: "coding-global",
+      fetchFn: makeFetch({
+        "https://api.z.ai/api/coding/paas/v4/chat/completions::glm-5": { status: 404 },
+        "https://api.z.ai/api/coding/paas/v4/chat/completions::glm-4.7": { status: 200 },
+      }),
+    });
+
+    expect(detected).toEqual(
+      expect.objectContaining({
+        endpoint: "coding-global",
+        modelId: "glm-4.7",
+      }),
+    );
+  });
 });

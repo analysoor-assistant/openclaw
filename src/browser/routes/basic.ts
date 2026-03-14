@@ -1,6 +1,7 @@
 import { getChromeMcpPid } from "../chrome-mcp.js";
 import { resolveBrowserExecutableForPlatform } from "../chrome.executables.js";
 import { toBrowserErrorResponse } from "../errors.js";
+import { getBrowserProfileCapabilities } from "../profile-capabilities.js";
 import { createBrowserProfilesService } from "../profiles-service.js";
 import type { BrowserRouteContext, ProfileContext } from "../server-context.js";
 import { resolveProfileContext } from "./agent.shared.js";
@@ -54,50 +55,59 @@ export function registerBrowserBasicRoutes(app: BrowserRouteRegistrar, ctx: Brow
       return jsonError(res, profileCtx.status, profileCtx.error);
     }
 
-    const [cdpHttp, cdpReady] = await Promise.all([
-      profileCtx.isHttpReachable(300),
-      profileCtx.isReachable(600),
-    ]);
-
-    const profileState = current.profiles.get(profileCtx.profile.name);
-    let detectedBrowser: string | null = null;
-    let detectedExecutablePath: string | null = null;
-    let detectError: string | null = null;
-
     try {
-      const detected = resolveBrowserExecutableForPlatform(current.resolved, process.platform);
-      if (detected) {
-        detectedBrowser = detected.kind;
-        detectedExecutablePath = detected.path;
-      }
-    } catch (err) {
-      detectError = String(err);
-    }
+      const [cdpHttp, cdpReady] = await Promise.all([
+        profileCtx.isHttpReachable(300),
+        profileCtx.isReachable(600),
+      ]);
 
-    res.json({
-      enabled: current.resolved.enabled,
-      profile: profileCtx.profile.name,
-      driver: profileCtx.profile.driver,
-      running: cdpReady,
-      cdpReady,
-      cdpHttp,
-      pid:
-        profileCtx.profile.driver === "existing-session"
+      const profileState = current.profiles.get(profileCtx.profile.name);
+      const capabilities = getBrowserProfileCapabilities(profileCtx.profile);
+      let detectedBrowser: string | null = null;
+      let detectedExecutablePath: string | null = null;
+      let detectError: string | null = null;
+
+      try {
+        const detected = resolveBrowserExecutableForPlatform(current.resolved, process.platform);
+        if (detected) {
+          detectedBrowser = detected.kind;
+          detectedExecutablePath = detected.path;
+        }
+      } catch (err) {
+        detectError = String(err);
+      }
+
+      res.json({
+        enabled: current.resolved.enabled,
+        profile: profileCtx.profile.name,
+        driver: profileCtx.profile.driver,
+        transport: capabilities.usesChromeMcp ? "chrome-mcp" : "cdp",
+        running: cdpReady,
+        cdpReady,
+        cdpHttp,
+        pid: capabilities.usesChromeMcp
           ? getChromeMcpPid(profileCtx.profile.name)
           : (profileState?.running?.pid ?? null),
-      cdpPort: profileCtx.profile.cdpPort,
-      cdpUrl: profileCtx.profile.cdpUrl,
-      chosenBrowser: profileState?.running?.exe.kind ?? null,
-      detectedBrowser,
-      detectedExecutablePath,
-      detectError,
-      userDataDir: profileState?.running?.userDataDir ?? null,
-      color: profileCtx.profile.color,
-      headless: current.resolved.headless,
-      noSandbox: current.resolved.noSandbox,
-      executablePath: current.resolved.executablePath ?? null,
-      attachOnly: profileCtx.profile.attachOnly,
-    });
+        cdpPort: capabilities.usesChromeMcp ? null : profileCtx.profile.cdpPort,
+        cdpUrl: capabilities.usesChromeMcp ? null : profileCtx.profile.cdpUrl,
+        chosenBrowser: profileState?.running?.exe.kind ?? null,
+        detectedBrowser,
+        detectedExecutablePath,
+        detectError,
+        userDataDir: profileState?.running?.userDataDir ?? null,
+        color: profileCtx.profile.color,
+        headless: current.resolved.headless,
+        noSandbox: current.resolved.noSandbox,
+        executablePath: current.resolved.executablePath ?? null,
+        attachOnly: profileCtx.profile.attachOnly,
+      });
+    } catch (err) {
+      const mapped = toBrowserErrorResponse(err);
+      if (mapped) {
+        return jsonError(res, mapped.status, mapped.message);
+      }
+      jsonError(res, 500, String(err));
+    }
   });
 
   // Start browser (profile-aware)
