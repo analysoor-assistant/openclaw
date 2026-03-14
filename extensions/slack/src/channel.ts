@@ -38,6 +38,7 @@ import {
   type ChannelPlugin,
   type ResolvedSlackAccount,
 } from "openclaw/plugin-sdk/slack";
+import { resolveOutboundSendDep } from "../../../src/infra/outbound/send-deps.js";
 import { getSlackRuntime } from "./runtime.js";
 
 const meta = getChatChannelMeta("slack");
