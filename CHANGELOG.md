@@ -22,7 +22,9 @@ Docs: https://docs.openclaw.ai
 - Gateway/client requests: reject unanswered gateway RPC calls after a bounded timeout and clear their pending state, so stalled connections no longer leak hanging `GatewayClient.request()` promises indefinitely.
 - Gateway/pairing: skip device-pair creation entirely when `auth.mode=none`, so no-auth gateway setups stop emitting unnecessary pairing side effects.
 - Auth/model login: clear stale lockout state after a successful re-authentication so retried model auth no longer stays blocked by an old lockout window.
+- Z.AI/onboarding: detect a working default model even for explicit `zai-coding-*` endpoint choices, so Coding Plan setup can keep the selected endpoint while defaulting to `glm-5` when available or `glm-4.7` as fallback. (#45969)
 - Control UI/chat sessions: show human-readable labels in the grouped session dropdown again, keep unique scoped fallbacks when metadata is missing, and disambiguate duplicate labels only when needed. (#45130) thanks @luzhidong.
+- Dashboard/chat UI: stop reloading full chat history on every live tool result so tool-heavy runs no longer trigger UI freeze and re-render storms while the final event still refreshes persisted history. (#45541) Thanks @BunsDev.
 - Configure/startup: move outbound send-deps resolution into a lightweight helper so `openclaw configure` no longer stalls after the banner while eagerly loading channel plugins. (#46301) thanks @scoootscooob.
 - Browser/existing-session: harden driver validation and session lifecycle so transport errors trigger reconnects while tool-level errors preserve the session, and extract shared ARIA role sets to deduplicate Playwright and Chrome MCP snapshot paths. (#45682) Thanks @odysseus0.
 - Browser/existing-session: accept text-only `list_pages` and `new_page` responses from Chrome DevTools MCP so live-session tab discovery and new-tab open flows keep working when the server omits structured page metadata.
