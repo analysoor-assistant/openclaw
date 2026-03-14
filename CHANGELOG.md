@@ -21,6 +21,7 @@ Docs: https://docs.openclaw.ai
 - Telegram/webhook auth: validate the Telegram webhook secret before reading or parsing request bodies, so unauthenticated requests are rejected immediately instead of consuming up to 1 MB first. Thanks @space08.
 - Gateway/client requests: reject unanswered gateway RPC calls after a bounded timeout and clear their pending state, so stalled connections no longer leak hanging `GatewayClient.request()` promises indefinitely.
 - Gateway/pairing: skip device-pair creation entirely when `auth.mode=none`, so no-auth gateway setups stop emitting unnecessary pairing side effects.
+- Auth/model login: clear stale lockout state after a successful re-authentication so retried model auth no longer stays blocked by an old lockout window.
 - Control UI/chat sessions: show human-readable labels in the grouped session dropdown again, keep unique scoped fallbacks when metadata is missing, and disambiguate duplicate labels only when needed. (#45130) thanks @luzhidong.
 - Configure/startup: move outbound send-deps resolution into a lightweight helper so `openclaw configure` no longer stalls after the banner while eagerly loading channel plugins. (#46301) thanks @scoootscooob.
 - Browser/existing-session: harden driver validation and session lifecycle so transport errors trigger reconnects while tool-level errors preserve the session, and extract shared ARIA role sets to deduplicate Playwright and Chrome MCP snapshot paths. (#45682) Thanks @odysseus0.
@@ -72,7 +73,10 @@ Docs: https://docs.openclaw.ai
 - Agents/failover: normalize abort-wrapped `429 RESOURCE_EXHAUSTED` provider failures before abort short-circuiting so wrapped Google/Vertex rate limits continue across configured fallback models, including the embedded runner prompt-error path. (#39820) Thanks @lupuletic.
 - Mattermost/thread routing: non-inbound reply paths (TUI/WebUI turns, tool-call callbacks, subagent responses) now correctly route to the originating Mattermost thread when `replyToMode: "all"` is active; also prevents stale `origin.threadId` metadata from resurrecting cleared thread routes. (#44283) thanks @teconomix
 - Gateway/websocket pairing bypass for disabled auth: skip device-pairing enforcement when `gateway.auth.mode=none` so Control UI connections behind reverse proxies no longer get stuck on `pairing required` (code 1008) despite auth being explicitly disabled. (#42931)
-  > > > > > > > 9bffa3422 (fix(gateway): skip device pairing when auth.mode=none)
+  <<<<<<< HEAD
+  > > > > > > > # 9bffa3422 (fix(gateway): skip device pairing when auth.mode=none)
+- Auth/login lockout recovery: clear stale `auth_permanent` and `billing` disabled state for all profiles matching the target provider when `openclaw models auth login` is invoked, so users locked out by expired or revoked OAuth tokens can recover by re-authenticating instead of waiting for the cooldown timer to expire. (#43057)
+  > > > > > > > e490f450f (fix(auth): clear stale lockout state when user re-authenticates)
 
 ## 2026.3.12
 
