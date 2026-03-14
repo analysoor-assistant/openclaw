@@ -12,6 +12,7 @@ Docs: https://docs.openclaw.ai
 - Browser/existing-session: add an official Chrome DevTools MCP attach mode for signed-in live Chrome sessions, with docs for `chrome://inspect/#remote-debugging` enablement and direct backlinks to Chrome’s own setup guides.
 - Browser/act automation: add batched actions, selector targeting, and delayed clicks for browser act requests with normalized batch dispatch. Thanks @vincentkoc.
 - Browser/agents: add `browserSession="agent" | "user"` so agent browser calls can explicitly choose the isolated OpenClaw browser or a logged-in user browser, with docs for when user presence and attach approval are required.
+- Browser/agents: add built-in `profile="user"` for the logged-in host browser and `profile="chrome-relay"` for the extension relay, so agent browser calls can prefer the real signed-in browser without the extra `browserSession` selector.
 
 ### Fixes
 
