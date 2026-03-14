@@ -245,42 +245,42 @@ export async function applyAuthChoiceApiProviders(
         setZaiApiKey(apiKey, params.agentDir, { secretInputMode: mode }),
     });
 
-    // zai-api-key: auto-detect endpoint + choose a working default model.
     let modelIdOverride: string | undefined;
-    if (!endpoint) {
-      const detected = await detectZaiEndpoint({ apiKey });
-      if (detected) {
-        endpoint = detected.endpoint;
-        modelIdOverride = detected.modelId;
-        await params.prompter.note(detected.note, "Z.AI endpoint");
-      } else {
-        endpoint = await params.prompter.select({
-          message: "Select Z.AI endpoint",
-          options: [
-            {
-              value: "coding-global",
-              label: "Coding-Plan-Global",
-              hint: "GLM Coding Plan Global (api.z.ai)",
-            },
-            {
-              value: "coding-cn",
-              label: "Coding-Plan-CN",
-              hint: "GLM Coding Plan CN (open.bigmodel.cn)",
-            },
-            {
-              value: "global",
-              label: "Global",
-              hint: "Z.AI Global (api.z.ai)",
-            },
-            {
-              value: "cn",
-              label: "CN",
-              hint: "Z.AI CN (open.bigmodel.cn)",
-            },
-          ],
-          initialValue: "global",
-        });
-      }
+    const detected = await detectZaiEndpoint({
+      apiKey,
+      ...(endpoint ? { endpoint } : {}),
+    });
+    if (detected) {
+      endpoint = detected.endpoint;
+      modelIdOverride = detected.modelId;
+      await params.prompter.note(detected.note, "Z.AI endpoint");
+    } else if (!endpoint) {
+      endpoint = await params.prompter.select({
+        message: "Select Z.AI endpoint",
+        options: [
+          {
+            value: "coding-global",
+            label: "Coding-Plan-Global",
+            hint: "GLM Coding Plan Global (api.z.ai)",
+          },
+          {
+            value: "coding-cn",
+            label: "Coding-Plan-CN",
+            hint: "GLM Coding Plan CN (open.bigmodel.cn)",
+          },
+          {
+            value: "global",
+            label: "Global",
+            hint: "Z.AI Global (api.z.ai)",
+          },
+          {
+            value: "cn",
+            label: "CN",
+            hint: "Z.AI CN (open.bigmodel.cn)",
+          },
+        ],
+        initialValue: "global",
+      });
     }
 
     nextConfig = applyAuthProfileConfig(nextConfig, {

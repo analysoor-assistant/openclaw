@@ -285,7 +285,10 @@ describe("applyAuthChoice", () => {
       expectedBaseUrl: string;
       expectedModel?: string;
       shouldPromptForEndpoint: boolean;
-      shouldAssertDetectCall?: boolean;
+      expectedDetectCall?: {
+        apiKey: string;
+        endpoint?: "coding-global" | "coding-cn" | "global" | "cn";
+      };
     }> = [
       {
         authChoice: "zai-api-key",
@@ -294,12 +297,29 @@ describe("applyAuthChoice", () => {
         expectedBaseUrl: ZAI_CODING_CN_BASE_URL,
         expectedModel: "zai/glm-5",
         shouldPromptForEndpoint: true,
+        expectedDetectCall: { apiKey: "zai-test-key" },
       },
       {
         authChoice: "zai-coding-global",
         token: "zai-test-key",
         expectedBaseUrl: ZAI_CODING_GLOBAL_BASE_URL,
+        expectedModel: "zai/glm-5",
         shouldPromptForEndpoint: false,
+        expectedDetectCall: { apiKey: "zai-test-key", endpoint: "coding-global" },
+      },
+      {
+        authChoice: "zai-coding-global",
+        token: "zai-legacy-coding-key",
+        detectResult: {
+          endpoint: "coding-global",
+          modelId: "glm-4.7",
+          baseUrl: ZAI_CODING_GLOBAL_BASE_URL,
+          note: "Detected legacy coding-global endpoint",
+        },
+        expectedBaseUrl: ZAI_CODING_GLOBAL_BASE_URL,
+        expectedModel: "zai/glm-4.7",
+        shouldPromptForEndpoint: false,
+        expectedDetectCall: { apiKey: "zai-legacy-coding-key", endpoint: "coding-global" },
       },
       {
         authChoice: "zai-api-key",
@@ -313,7 +333,7 @@ describe("applyAuthChoice", () => {
         expectedBaseUrl: ZAI_CODING_GLOBAL_BASE_URL,
         expectedModel: "zai/glm-5",
         shouldPromptForEndpoint: false,
-        shouldAssertDetectCall: true,
+        expectedDetectCall: { apiKey: "zai-detected-key" },
       },
       {
         authChoice: "zai-api-key",
@@ -327,7 +347,7 @@ describe("applyAuthChoice", () => {
         expectedBaseUrl: ZAI_CODING_GLOBAL_BASE_URL,
         expectedModel: "zai/glm-4.7",
         shouldPromptForEndpoint: false,
-        shouldAssertDetectCall: true,
+        expectedDetectCall: { apiKey: "zai-legacy-key" },
       },
     ];
     for (const scenario of scenarios) {
@@ -358,8 +378,8 @@ describe("applyAuthChoice", () => {
         setDefaultModel: true,
       });
 
-      if (scenario.shouldAssertDetectCall) {
-        expect(detectZaiEndpoint).toHaveBeenCalledWith({ apiKey: scenario.token });
+      if (scenario.expectedDetectCall) {
+        expect(detectZaiEndpoint).toHaveBeenCalledWith(scenario.expectedDetectCall);
       }
       if (scenario.shouldPromptForEndpoint) {
         expect(select).toHaveBeenCalledWith(
