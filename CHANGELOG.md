@@ -17,6 +17,7 @@ Docs: https://docs.openclaw.ai
 - Telegram/webhook auth: validate the Telegram webhook secret before reading or parsing request bodies, so unauthenticated requests are rejected immediately instead of consuming up to 1 MB first. Thanks @space08.
 - Browser/existing-session: accept text-only `list_pages` and `new_page` responses from Chrome DevTools MCP so live-session tab discovery and new-tab open flows keep working when the server omits structured page metadata.
 - macOS/exec approvals: respect per-agent exec approval settings in the gateway prompter, including allowlist fallback when the native prompt cannot be shown, so gateway-triggered `system.run` requests follow configured policy instead of always prompting or denying unexpectedly. (#13707) Thanks @sliekens.
+- UI/chat replies: keep oversized chat replies readable instead of collapsing long unbroken content into an unusable layout. (#45559) Thanks @bnjmn-git.
 - Ollama/reasoning visibility: stop promoting native `thinking` and `reasoning` fields into final assistant text so local reasoning models no longer leak internal thoughts in normal replies. (#45330) Thanks @xi7ang.
 - Cron/isolated sessions: route nested cron-triggered embedded runner work onto the nested lane so isolated cron jobs no longer deadlock when compaction or other queued inner work runs. Thanks @vincentkoc.
 - Windows/gateway install: bound `schtasks` calls and fall back to the Startup-folder login item when task creation hangs, so native `openclaw gateway install` fails fast instead of wedging forever on broken Scheduled Task setups.
@@ -45,10 +46,18 @@ Docs: https://docs.openclaw.ai
 - macOS/onboarding: avoid self-restarting freshly bootstrapped launchd gateways and give new daemon installs longer to become healthy, so `openclaw onboard --install-daemon` no longer false-fails on slower Macs and fresh VM snapshots.
 - Agents/compaction: preserve safeguard compaction summary language continuity via default and configurable custom instructions so persona drift is reduced after auto-compaction. (#10456) Thanks @keepitmello.
 - Agents/tool warnings: distinguish gated core tools like `apply_patch` from plugin-only unknown entries in `tools.profile` warnings, so unavailable core tools now report current runtime/provider/model/config gating instead of suggesting a missing plugin.
+  <<<<<<< HEAD
 - Slack/probe: keep `auth.test()` bot and team metadata mapping stable while simplifying the probe result path. (#44775) Thanks @Cafexss.
 - Dashboard/chat UI: restore the `chat-new-messages` class on the New messages scroll pill so the button uses its existing compact styling instead of rendering as a full-screen SVG overlay. (#44856) Thanks @Astro-Han.
 - Windows/gateway status: reuse the installed service command environment when reading runtime status, so startup-fallback gateways keep reporting the configured port and running state in `gateway status --json` instead of falling back to `gateway port unknown`.
-- Security/device pairing: make bootstrap setup codes single-use so pending device pairing requests cannot be silently replayed and widened to admin before approval. Thanks @tdjackey.
+- # Security/device pairing: make bootstrap setup codes single-use so pending device pairing requests cannot be silently replayed and widened to admin before approval. Thanks @tdjackey.
+- Config/validation: accept documented `agents.list[].params` per-agent overrides in strict config validation so `openclaw config validate` no longer rejects runtime-supported `cacheRetention`, `temperature`, and `maxTokens` settings. (#41171) Thanks @atian8179.
+- Config/web fetch: restore runtime validation for documented `tools.web.fetch.readability` and `tools.web.fetch.firecrawl` settings so valid web fetch configs no longer fail with unrecognized-key errors. (#42583) Thanks @stim64045-spec.
+- Signal/config validation: add `channels.signal.groups` schema support so per-group `requireMention`, `tools`, and `toolsBySender` overrides no longer get rejected during config validation. (#27199) Thanks @unisone.
+- Config/discovery: accept `discovery.wideArea.domain` in strict config validation so unicast DNS-SD gateway configs no longer fail with an unrecognized-key error. (#35615) Thanks @ingyukoh.
+- Telegram/media errors: redact Telegram file URLs before building media fetch errors so failed inbound downloads do not leak bot tokens into logs. Thanks @space08.
+- Dashboard/chat UI: render oversized plain-text replies as normal paragraphs instead of capped gray code blocks, so long desktop chat responses stay readable without tab-switching refreshes.
+  > > > > > > > 40ab39b5e (fix(ui): keep oversized chat replies readable (#45559))
 
 ## 2026.3.12
 
