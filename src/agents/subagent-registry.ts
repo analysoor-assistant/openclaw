@@ -23,6 +23,7 @@ import {
   runSubagentAnnounceFlow,
   type SubagentRunOutcome,
 } from "./subagent-announce.js";
+import { preferBetterSubagentCompletionReply } from "./subagent-completion-selection.js";
 import {
   SUBAGENT_ENDED_OUTCOME_KILLED,
   SUBAGENT_ENDED_REASON_COMPLETE,
@@ -435,10 +436,12 @@ async function refreshFrozenResultFromSession(sessionKey: string): Promise<boole
   const capturedAt = Date.now();
   let changed = false;
   for (const entry of candidates) {
-    if (entry.frozenResultText === nextFrozen) {
+    const preferred = preferBetterSubagentCompletionReply(entry.frozenResultText, nextFrozen);
+    const resolvedFrozen = preferred?.trim() ? capFrozenResultText(preferred) : null;
+    if (entry.frozenResultText === resolvedFrozen) {
       continue;
     }
-    entry.frozenResultText = nextFrozen;
+    entry.frozenResultText = resolvedFrozen;
     entry.frozenResultCapturedAt = capturedAt;
     changed = true;
   }

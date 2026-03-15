@@ -43,6 +43,7 @@ import {
   type SubagentAnnounceDeliveryResult,
 } from "./subagent-announce-dispatch.js";
 import { type AnnounceQueueItem, enqueueAnnounce } from "./subagent-announce-queue.js";
+import { preferBetterSubagentCompletionReply } from "./subagent-completion-selection.js";
 import { getSubagentDepthFromSessionStore } from "./subagent-depth.js";
 import type { SpawnSubagentMode } from "./subagent-spawn.js";
 import { readLatestAssistantReply } from "./tools/agent-step.js";
@@ -285,34 +286,38 @@ function extractSubagentOutputText(message: unknown): string {
   return "";
 }
 
-async function readLatestSubagentOutput(sessionKey: string): Promise<string | undefined> {
+async function readPreferredSubagentOutput(sessionKey: string): Promise<string | undefined> {
+  let preferred: string | undefined;
   try {
     const latestAssistant = await readLatestAssistantReply({
       sessionKey,
       limit: 50,
     });
-    if (latestAssistant?.trim()) {
-      return latestAssistant;
-    }
+    preferred = preferBetterSubagentCompletionReply(preferred, latestAssistant);
   } catch {
     // Best-effort: fall back to richer history parsing below.
   }
-  const history = await callGateway<{ messages?: Array<unknown> }>({
-    method: "chat.history",
-    params: { sessionKey, limit: 50 },
-  });
-  const messages = Array.isArray(history?.messages) ? history.messages : [];
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    const msg = messages[i];
-    const text = extractSubagentOutputText(msg);
-    if (text) {
-      return text;
+
+  try {
+    const history = await callGateway<{ messages?: Array<unknown> }>({
+      method: "chat.history",
+      params: { sessionKey, limit: 50 },
+    });
+    const messages = Array.isArray(history?.messages) ? history.messages : [];
+    for (const message of messages) {
+      preferred = preferBetterSubagentCompletionReply(
+        preferred,
+        extractSubagentOutputText(message),
+      );
     }
+  } catch {
+    // Best-effort only.
   }
-  return undefined;
+
+  return preferred?.trim() || undefined;
 }
 
-async function readLatestSubagentOutputWithRetry(params: {
+async function readPreferredSubagentOutputWithRetry(params: {
   sessionKey: string;
   maxWaitMs: number;
 }): Promise<string | undefined> {
@@ -320,7 +325,7 @@ async function readLatestSubagentOutputWithRetry(params: {
   const deadline = Date.now() + Math.max(0, Math.min(params.maxWaitMs, 15_000));
   let result: string | undefined;
   while (Date.now() < deadline) {
-    result = await readLatestSubagentOutput(params.sessionKey);
+    result = await readPreferredSubagentOutput(params.sessionKey);
     if (result?.trim()) {
       return result;
     }
@@ -332,11 +337,11 @@ async function readLatestSubagentOutputWithRetry(params: {
 export async function captureSubagentCompletionReply(
   sessionKey: string,
 ): Promise<string | undefined> {
-  const immediate = await readLatestSubagentOutput(sessionKey);
+  const immediate = await readPreferredSubagentOutput(sessionKey);
   if (immediate?.trim()) {
     return immediate;
   }
-  return await readLatestSubagentOutputWithRetry({
+  return await readPreferredSubagentOutputWithRetry({
     sessionKey,
     maxWaitMs: FAST_TEST_MODE ? 50 : 1_500,
   });
@@ -1302,43 +1307,44 @@ export async function runSubagentAnnounceFlow(params: {
       }
     }
 
-    if (!childCompletionFindings) {
-      const fallbackReply = params.fallbackReply?.trim() ? params.fallbackReply.trim() : undefined;
-      const fallbackIsSilent =
-        Boolean(fallbackReply) &&
-        (isAnnounceSkip(fallbackReply) || isSilentReplyText(fallbackReply, SILENT_REPLY_TOKEN));
+    const fallbackReply = params.fallbackReply?.trim() ? params.fallbackReply.trim() : undefined;
+    const fallbackIsSilent =
+      Boolean(fallbackReply) &&
+      (isAnnounceSkip(fallbackReply) || isSilentReplyText(fallbackReply, SILENT_REPLY_TOKEN));
 
-      if (!reply) {
-        reply = await readLatestSubagentOutput(params.childSessionKey);
-      }
+    if (!reply) {
+      reply = await readPreferredSubagentOutput(params.childSessionKey);
+    }
 
-      if (!reply?.trim()) {
-        reply = await readLatestSubagentOutputWithRetry({
-          sessionKey: params.childSessionKey,
-          maxWaitMs: params.timeoutMs,
-        });
-      }
+    if (!reply?.trim()) {
+      reply = await readPreferredSubagentOutputWithRetry({
+        sessionKey: params.childSessionKey,
+        maxWaitMs: params.timeoutMs,
+      });
+    }
 
-      if (!reply?.trim() && fallbackReply && !fallbackIsSilent) {
+    if (!reply?.trim() && fallbackReply && !fallbackIsSilent) {
+      reply = fallbackReply;
+    }
+
+    if (
+      !expectsCompletionMessage &&
+      !reply?.trim() &&
+      !childCompletionFindings &&
+      childSessionId &&
+      isEmbeddedPiRunActive(childSessionId)
+    ) {
+      shouldDeleteChildSession = false;
+      return false;
+    }
+
+    if (isAnnounceSkip(reply) || isSilentReplyText(reply, SILENT_REPLY_TOKEN)) {
+      if (fallbackReply && !fallbackIsSilent) {
         reply = fallbackReply;
-      }
-
-      if (
-        !expectsCompletionMessage &&
-        !reply?.trim() &&
-        childSessionId &&
-        isEmbeddedPiRunActive(childSessionId)
-      ) {
-        shouldDeleteChildSession = false;
-        return false;
-      }
-
-      if (isAnnounceSkip(reply) || isSilentReplyText(reply, SILENT_REPLY_TOKEN)) {
-        if (fallbackReply && !fallbackIsSilent) {
-          reply = fallbackReply;
-        } else {
-          return true;
-        }
+      } else if (!childCompletionFindings) {
+        return true;
+      } else {
+        reply = undefined;
       }
     }
 
@@ -1354,7 +1360,8 @@ export async function runSubagentAnnounceFlow(params: {
 
     const taskLabel = params.label || params.task || "task";
     const announceSessionId = childSessionId || "unknown";
-    const findings = childCompletionFindings || reply || "(no output)";
+    const findings =
+      preferBetterSubagentCompletionReply(childCompletionFindings, reply) || "(no output)";
 
     let requesterIsSubagent = requesterIsInternalSession();
     if (requesterIsSubagent) {

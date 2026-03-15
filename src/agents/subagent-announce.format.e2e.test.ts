@@ -2552,6 +2552,46 @@ describe("subagent announce formatting", () => {
       expect(message).not.toContain("placeholder waiting text");
     });
 
+    it("regression nested 2-level, parent prefers its own structured verdict over helper child wrapper text", async () => {
+      subagentRegistryMock.countPendingDescendantRuns.mockReturnValue(0);
+      subagentRegistryMock.listSubagentRunsForRequester.mockImplementation((sessionKey: string) =>
+        sessionKey === "agent:main:subagent:review-lead"
+          ? [
+              makeChildCompletion({
+                runId: "run-persist-helper",
+                childSessionKey: "agent:main:subagent:review-lead:subagent:persist",
+                requesterSessionKey: "agent:main:subagent:review-lead",
+                label: "developer-persist-review-lead",
+                task: "persist review artifact",
+                createdAt: 10,
+                frozenResultText:
+                  "**Task Completed**\n\nFile written successfully:\n- Path: `/tmp/review.md`",
+              }),
+            ]
+          : [],
+      );
+      readLatestAssistantReplyMock.mockResolvedValue(
+        "Verdict: PASS_WITH_NOTES\nScope Reviewed:\n- rerun\nFindings:\n- LOW /tmp/file.ts — note\nSub-Reviewer Runs:\n- review-security: child | completed\nContext Updated: /tmp/review.md",
+      );
+
+      const didAnnounce = await runSubagentAnnounceFlow({
+        childSessionKey: "agent:main:subagent:review-lead",
+        childRunId: "run-review-lead",
+        requesterSessionKey: "agent:main:main",
+        requesterDisplayKey: "main",
+        ...defaultOutcomeAnnounce,
+        expectsCompletionMessage: true,
+      });
+
+      expect(didAnnounce).toBe(true);
+      const call = agentSpy.mock.calls[0]?.[0] as { params?: { message?: string } };
+      const message = call?.params?.message ?? "";
+      expect(message).toContain("Verdict: PASS_WITH_NOTES");
+      expect(message).toContain("Findings:");
+      expect(message).not.toContain("Child completion results:");
+      expect(message).not.toContain("File written successfully:");
+    });
+
     it("regression parallel fan-out, parent defers until both children settle and then includes both outputs", async () => {
       // Regression guard: fan-out paths previously announced after the first child and dropped the sibling.
       let pending = 1;
