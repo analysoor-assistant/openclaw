@@ -309,6 +309,47 @@ describe("subagent registry lifecycle error grace", () => {
     expect(captureCompletionReplySpy).toHaveBeenCalledTimes(2);
   });
 
+  it("ignores weaker follow-up turns when a structured frozen verdict already exists", async () => {
+    registerCompletionRun("run-refresh-weaker", "refresh-weaker", "refresh weaker follow-up test");
+    captureCompletionReplySpy.mockResolvedValueOnce(
+      "Verdict: BLOCK\nScope Reviewed:\n- phase 3\nFindings:\n- HIGH /tmp/file.ts — issue\nSub-Reviewer Runs:\n- review-security: child | completed\nContext Updated: /tmp/review.md",
+    );
+    announceSpy.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+    const endedAt = Date.now();
+    emitLifecycleEvent("run-refresh-weaker", { phase: "end", endedAt });
+    await flushAsync();
+    await waitForCleanupHandledFalse("run-refresh-weaker");
+
+    captureCompletionReplySpy.mockResolvedValueOnce(
+      "The verdict was already synthesized and delivered in my prior message.\n\nVerdict: BLOCK\nContext Updated: /tmp/review.md",
+    );
+    emitLifecycleEvent(
+      "run-refresh-weaker-followup-turn",
+      { phase: "end", endedAt: endedAt + 200 },
+      { sessionKey: "agent:main:subagent:refresh-weaker" },
+    );
+    await flushAsync();
+
+    const runAfterWeaker = mod
+      .listSubagentRunsForRequester(MAIN_REQUESTER_SESSION_KEY)
+      .find((candidate) => candidate.runId === "run-refresh-weaker");
+    expect(runAfterWeaker?.frozenResultText).toContain("Findings:");
+    expect(runAfterWeaker?.frozenResultText).not.toContain(
+      "already synthesized and delivered in my prior message",
+    );
+
+    emitLifecycleEvent("run-refresh-weaker", { phase: "end", endedAt: endedAt + 300 });
+    await flushAsync();
+
+    expect(announceSpy).toHaveBeenCalledTimes(2);
+    const secondCall = announceSpy.mock.calls[1]?.[0] as { roundOneReply?: string } | undefined;
+    expect(secondCall?.roundOneReply).toContain("Findings:");
+    expect(secondCall?.roundOneReply).not.toContain(
+      "already synthesized and delivered in my prior message",
+    );
+  });
+
   it("regression, captures frozen completion output with 100KB cap and retains it for keep-mode cleanup", async () => {
     registerCompletionRun("run-capped", "capped", "capped result test");
     captureCompletionReplySpy.mockResolvedValueOnce("x".repeat(120 * 1024));

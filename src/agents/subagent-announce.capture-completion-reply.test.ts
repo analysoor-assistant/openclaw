@@ -51,7 +51,7 @@ describe("captureSubagentCompletionReply", () => {
 
     expect(result).toBe("Immediate assistant completion");
     expect(readLatestAssistantReplyMock).toHaveBeenCalledTimes(1);
-    expect(chatHistoryMock).not.toHaveBeenCalled();
+    expect(chatHistoryMock).toHaveBeenCalledTimes(1);
   });
 
   it("polls briefly and returns late tool output once available", async () => {
@@ -92,5 +92,38 @@ describe("captureSubagentCompletionReply", () => {
     expect(result).toBeUndefined();
     expect(chatHistoryMock).toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it("prefers an earlier structured verdict over a later weaker follow-up reply", async () => {
+    readLatestAssistantReplyMock.mockResolvedValueOnce(
+      "The verdict was already synthesized and delivered in my prior message.\n\nVerdict: BLOCK\nContext Updated: /tmp/review.md",
+    );
+    chatHistoryMock.mockResolvedValueOnce({
+      messages: [
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "Verdict: BLOCK\nScope Reviewed:\n- ranking diff\nFindings:\n- HIGH /tmp/file.ts — issue\nSub-Reviewer Runs:\n- review-security: child | completed\nContext Updated: /tmp/review.md",
+            },
+          ],
+        },
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: "The verdict was already synthesized and delivered in my prior message.\n\nVerdict: BLOCK\nContext Updated: /tmp/review.md",
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = await captureSubagentCompletionReply("agent:main:subagent:child");
+
+    expect(result).toContain("Findings:");
+    expect(result).not.toContain("already synthesized and delivered");
   });
 });
