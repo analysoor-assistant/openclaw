@@ -51,6 +51,9 @@ function maybeBootstrapChannelPlugin(params: {
     loadOpenClawPlugins({
       config: autoEnabled,
       workspaceDir,
+      runtimeOptions: {
+        allowGatewaySubagentBinding: true,
+      },
     });
   } catch {
     // Allow a follow-up resolution attempt if bootstrap failed transiently.

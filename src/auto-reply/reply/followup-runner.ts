@@ -169,6 +169,7 @@ export function createFollowupRunner(params: {
           run: async (provider, model, runOptions) => {
             const authProfile = resolveRunAuthProfile(queued.run, provider);
             const result = await runEmbeddedPiAgent({
+              allowGatewaySubagentBinding: true,
               sessionId: queued.run.sessionId,
               sessionKey: queued.run.sessionKey,
               agentId: queued.run.agentId,

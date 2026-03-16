@@ -207,6 +207,7 @@ function buildCacheKey(params: {
   plugins: NormalizedPluginsConfig;
   installs?: Record<string, PluginInstallRecord>;
   env: NodeJS.ProcessEnv;
+  runtimeSubagentMode?: "default" | "explicit" | "gateway-bindable";
 }): string {
   const { roots, loadPaths } = resolvePluginCacheInputs({
     workspaceDir: params.workspaceDir,
@@ -233,7 +234,7 @@ function buildCacheKey(params: {
     ...params.plugins,
     installs,
     loadPaths,
-  })}`;
+  })}::${params.runtimeSubagentMode ?? "default"}`;
 }
 
 function validatePluginConfig(params: {
@@ -534,6 +535,12 @@ export function loadOpenClawPlugins(options: PluginLoadOptions = {}): PluginRegi
     plugins: normalized,
     installs: cfg.plugins?.installs,
     env,
+    runtimeSubagentMode:
+      options.runtimeOptions?.allowGatewaySubagentBinding === true
+        ? "gateway-bindable"
+        : options.runtimeOptions?.subagent
+          ? "explicit"
+          : "default",
   });
   const cacheEnabled = options.cache !== false;
   if (cacheEnabled) {
