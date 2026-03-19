@@ -286,6 +286,29 @@ describe("telegramPlugin duplicate token guard", () => {
     expect(result).toMatchObject({ channel: "telegram", messageId: "tg-1" });
   });
 
+  it("uses channel-keyed outbound deps when provided", async () => {
+    const runtimeSend = installSendMessageRuntime(vi.fn(async () => ({ messageId: "runtime" })));
+    const injectedSend = vi.fn(async () => ({ messageId: "tg-dep" }));
+
+    const result = await telegramPlugin.outbound!.sendText!({
+      cfg: createCfg(),
+      to: "12345",
+      text: "hello",
+      accountId: "ops",
+      deps: { telegram: injectedSend },
+    });
+
+    expect(injectedSend).toHaveBeenCalledWith(
+      "12345",
+      "hello",
+      expect.objectContaining({
+        accountId: "ops",
+      }),
+    );
+    expect(runtimeSend).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ channel: "telegram", messageId: "tg-dep" });
+  });
+
   it("preserves buttons for outbound text payload sends", async () => {
     const sendMessageTelegram = installSendMessageRuntime(
       vi.fn(async () => ({ messageId: "tg-2" })),

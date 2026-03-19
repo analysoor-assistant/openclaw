@@ -18,7 +18,7 @@ describe("signalPlugin outbound sendMedia", () => {
       mediaUrl: "/tmp/workspace/photo.png",
       mediaLocalRoots,
       accountId: "default",
-      deps: { sendSignal },
+      deps: { signal: sendSignal },
     });
 
     expect(sendSignal).toHaveBeenCalledWith(

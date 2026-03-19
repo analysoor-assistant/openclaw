@@ -8,8 +8,8 @@ import {
   sendPollDiscord,
   sendWebhookMessageDiscord,
 } from "../../../discord/send.js";
-import { resolveOutboundSendDep } from "../../../infra/outbound/deliver.js";
 import type { OutboundIdentity } from "../../../infra/outbound/identity.js";
+import { resolveOutboundSendDep } from "../../../infra/outbound/send-deps.js";
 import { normalizeDiscordOutboundTarget } from "../normalize/discord.js";
 import type { ChannelOutboundAdapter } from "../types.js";
 import { sendTextMediaPayload } from "./direct-text-media.js";

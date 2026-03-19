@@ -95,6 +95,30 @@ describe("msteamsOutbound cfg threading", () => {
     });
   });
 
+  it("passes resolved cfg through channel-keyed msteams deps", async () => {
+    const cfg = {
+      channels: {
+        msteams: {
+          appId: "resolved-app-id",
+        },
+      },
+    } as OpenClawConfig;
+    const sendMSTeams = vi.fn(async () => ({
+      messageId: "dep-msg-1",
+      conversationId: "dep-conv-1",
+    }));
+
+    await msteamsOutbound.sendText!({
+      cfg,
+      to: "conversation:abc",
+      text: "hello via deps",
+      deps: { msteams: sendMSTeams },
+    });
+
+    expect(sendMSTeams).toHaveBeenCalledWith("conversation:abc", "hello via deps");
+    expect(mocks.sendMessageMSTeams).not.toHaveBeenCalled();
+  });
+
   it("passes resolved cfg to sendPollMSTeams and stores poll metadata", async () => {
     const cfg = {
       channels: {

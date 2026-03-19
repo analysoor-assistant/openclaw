@@ -9,7 +9,8 @@ export const matrixOutbound: ChannelOutboundAdapter = {
   chunkerMode: "markdown",
   textChunkLimit: 4000,
   sendText: async ({ cfg, to, text, deps, replyToId, threadId, accountId }) => {
-    const send = deps?.sendMatrix ?? sendMessageMatrix;
+    const send =
+      resolveOutboundSendDep<typeof sendMessageMatrix>(deps, "matrix") ?? sendMessageMatrix;
     const resolvedThreadId =
       threadId !== undefined && threadId !== null ? String(threadId) : undefined;
     const result = await send(to, text, {
@@ -25,7 +26,8 @@ export const matrixOutbound: ChannelOutboundAdapter = {
     };
   },
   sendMedia: async ({ cfg, to, text, mediaUrl, deps, replyToId, threadId, accountId }) => {
-    const send = deps?.sendMatrix ?? sendMessageMatrix;
+    const send =
+      resolveOutboundSendDep<typeof sendMessageMatrix>(deps, "matrix") ?? sendMessageMatrix;
     const resolvedThreadId =
       threadId !== undefined && threadId !== null ? String(threadId) : undefined;
     const result = await send(to, text, {
