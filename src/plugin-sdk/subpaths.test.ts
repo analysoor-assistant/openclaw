@@ -1,11 +1,19 @@
 import * as compatSdk from "openclaw/plugin-sdk/compat";
 import * as discordSdk from "openclaw/plugin-sdk/discord";
+import * as discordCoreSdk from "openclaw/plugin-sdk/discord-core";
+import * as extensionSharedSdk from "openclaw/plugin-sdk/extension-shared";
+import * as googleSdk from "openclaw/plugin-sdk/google";
 import * as imessageSdk from "openclaw/plugin-sdk/imessage";
+import * as imessageCoreSdk from "openclaw/plugin-sdk/imessage-core";
 import * as lineSdk from "openclaw/plugin-sdk/line";
+import * as lineCoreSdk from "openclaw/plugin-sdk/line-core";
 import * as msteamsSdk from "openclaw/plugin-sdk/msteams";
 import * as signalSdk from "openclaw/plugin-sdk/signal";
+import * as signalCoreSdk from "openclaw/plugin-sdk/signal-core";
 import * as slackSdk from "openclaw/plugin-sdk/slack";
+import * as slackCoreSdk from "openclaw/plugin-sdk/slack-core";
 import * as telegramSdk from "openclaw/plugin-sdk/telegram";
+import * as telegramCoreSdk from "openclaw/plugin-sdk/telegram-core";
 import * as whatsappSdk from "openclaw/plugin-sdk/whatsapp";
 import { describe, expect, it } from "vitest";
 
@@ -61,10 +69,22 @@ describe("plugin-sdk subpath exports", () => {
     expect(typeof discordSdk.discordOnboardingAdapter).toBe("object");
   });
 
+  it("exports Discord core helpers", () => {
+    expect(typeof discordCoreSdk.buildChannelConfigSchema).toBe("function");
+    expect(typeof discordCoreSdk.DiscordConfigSchema).toBe("object");
+    expect(typeof discordCoreSdk.resolvePollMaxSelections).toBe("function");
+  });
+
   it("exports Slack helpers", () => {
     expect(typeof slackSdk.resolveSlackAccount).toBe("function");
     expect(typeof slackSdk.inspectSlackAccount).toBe("function");
     expect(typeof slackSdk.handleSlackMessageAction).toBe("function");
+  });
+
+  it("exports Slack core helpers", () => {
+    expect(typeof slackCoreSdk.buildChannelConfigSchema).toBe("function");
+    expect(typeof slackCoreSdk.SlackConfigSchema).toBe("object");
+    expect(typeof slackCoreSdk.readStringParam).toBe("function");
   });
 
   it("exports Telegram helpers", () => {
@@ -73,14 +93,32 @@ describe("plugin-sdk subpath exports", () => {
     expect(typeof telegramSdk.telegramOnboardingAdapter).toBe("object");
   });
 
+  it("exports Telegram core helpers", () => {
+    expect(typeof telegramCoreSdk.buildChannelConfigSchema).toBe("function");
+    expect(typeof telegramCoreSdk.TelegramConfigSchema).toBe("object");
+    expect(typeof telegramCoreSdk.resolvePollMaxSelections).toBe("function");
+  });
+
   it("exports Signal helpers", () => {
     expect(typeof signalSdk.resolveSignalAccount).toBe("function");
     expect(typeof signalSdk.signalOnboardingAdapter).toBe("object");
   });
 
+  it("exports Signal core helpers", () => {
+    expect(typeof signalCoreSdk.buildChannelConfigSchema).toBe("function");
+    expect(typeof signalCoreSdk.SignalConfigSchema).toBe("object");
+    expect(typeof signalCoreSdk.normalizeE164).toBe("function");
+  });
+
   it("exports iMessage helpers", () => {
     expect(typeof imessageSdk.resolveIMessageAccount).toBe("function");
     expect(typeof imessageSdk.imessageOnboardingAdapter).toBe("object");
+  });
+
+  it("exports iMessage core helpers", () => {
+    expect(typeof imessageCoreSdk.buildChannelConfigSchema).toBe("function");
+    expect(typeof imessageCoreSdk.parseChatTargetPrefixesOrThrow).toBe("function");
+    expect(typeof imessageCoreSdk.resolveServicePrefixedTarget).toBe("function");
   });
 
   it("exports WhatsApp helpers", () => {
@@ -93,9 +131,26 @@ describe("plugin-sdk subpath exports", () => {
     expect(typeof lineSdk.createInfoCard).toBe("function");
   });
 
+  it("exports LINE core helpers", () => {
+    expect(typeof lineCoreSdk.resolveDefaultLineAccountId).toBe("function");
+    expect(typeof lineCoreSdk.resolveExactLineGroupConfigKey).toBe("function");
+    expect(typeof lineCoreSdk.LineConfigSchema).toBe("object");
+  });
+
   it("exports Microsoft Teams helpers", () => {
     expect(typeof msteamsSdk.resolveControlCommandGate).toBe("function");
     expect(typeof msteamsSdk.loadOutboundMediaFromUrl).toBe("function");
+  });
+
+  it("exports Google helpers", () => {
+    expect(typeof googleSdk.normalizeGoogleModelId).toBe("function");
+    expect(typeof googleSdk.parseGeminiAuth).toBe("function");
+  });
+
+  it("exports shared extension helpers", () => {
+    expect(typeof extensionSharedSdk.buildPassiveChannelStatusSummary).toBe("function");
+    expect(typeof extensionSharedSdk.buildTrafficStatusSummary).toBe("function");
+    expect(typeof extensionSharedSdk.createDeferred).toBe("function");
   });
 
   it("exports acpx helpers", async () => {
