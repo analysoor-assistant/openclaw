@@ -21,7 +21,7 @@ describe("imessagePlugin outbound", () => {
       text: "hello",
       accountId: "default",
       replyToId: "reply-1",
-      deps: { sendIMessage },
+      deps: { imessage: sendIMessage },
     });
 
     expect(sendIMessage).toHaveBeenCalledWith(

@@ -38,7 +38,10 @@ import {
   type ChannelPlugin,
   type ResolvedSlackAccount,
 } from "openclaw/plugin-sdk/slack";
-import { resolveOutboundSendDep } from "../../../src/infra/outbound/send-deps.js";
+import {
+  resolveOutboundSendDep,
+  type OutboundSendDeps,
+} from "../../../src/infra/outbound/send-deps.js";
 import { getSlackRuntime } from "./runtime.js";
 
 const meta = getChatChannelMeta("slack");
@@ -77,11 +80,13 @@ type SlackSendFn = ReturnType<typeof getSlackRuntime>["channel"]["slack"]["sendM
 function resolveSlackSendContext(params: {
   cfg: Parameters<typeof resolveSlackAccount>[0]["cfg"];
   accountId?: string;
-  deps?: { sendSlack?: SlackSendFn };
+  deps?: OutboundSendDeps;
   replyToId?: string | number | null;
   threadId?: string | number | null;
 }) {
-  const send = params.deps?.sendSlack ?? getSlackRuntime().channel.slack.sendMessageSlack;
+  const send =
+    resolveOutboundSendDep<SlackSendFn>(params.deps, "slack") ??
+    getSlackRuntime().channel.slack.sendMessageSlack;
   const account = resolveSlackAccount({ cfg: params.cfg, accountId: params.accountId });
   const token = getTokenForOperation(account, "write");
   const botToken = account.botToken?.trim();

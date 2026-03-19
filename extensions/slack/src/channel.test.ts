@@ -81,7 +81,7 @@ describe("slackPlugin outbound", () => {
       text: "hello",
       accountId: "default",
       threadId: "1712345678.123456",
-      deps: { sendSlack },
+      deps: { slack: sendSlack },
     });
 
     expect(sendSlack).toHaveBeenCalledWith(

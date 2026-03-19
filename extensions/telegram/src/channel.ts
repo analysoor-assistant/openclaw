@@ -46,6 +46,10 @@ import {
 } from "../../../src/infra/outbound/send-deps.js";
 import { getTelegramRuntime } from "./runtime.js";
 
+type TelegramSendFn = ReturnType<
+  typeof getTelegramRuntime
+>["channel"]["telegram"]["sendMessageTelegram"];
+
 const meta = getChatChannelMeta("telegram");
 
 function findTelegramTokenOwnerAccountId(params: {
@@ -330,7 +334,9 @@ export const telegramPlugin: ChannelPlugin<ResolvedTelegramAccount, TelegramProb
       threadId,
       silent,
     }) => {
-      const send = deps?.sendTelegram ?? getTelegramRuntime().channel.telegram.sendMessageTelegram;
+      const send =
+        resolveOutboundSendDep<TelegramSendFn>(deps, "telegram") ??
+        getTelegramRuntime().channel.telegram.sendMessageTelegram;
       const replyToMessageId = parseTelegramReplyToMessageId(replyToId);
       const messageThreadId = parseTelegramThreadId(threadId);
       const result = await sendTelegramPayloadMessages({
@@ -350,7 +356,9 @@ export const telegramPlugin: ChannelPlugin<ResolvedTelegramAccount, TelegramProb
       return { channel: "telegram", ...result };
     },
     sendText: async ({ cfg, to, text, accountId, deps, replyToId, threadId, silent }) => {
-      const send = deps?.sendTelegram ?? getTelegramRuntime().channel.telegram.sendMessageTelegram;
+      const send =
+        resolveOutboundSendDep<TelegramSendFn>(deps, "telegram") ??
+        getTelegramRuntime().channel.telegram.sendMessageTelegram;
       const replyToMessageId = parseTelegramReplyToMessageId(replyToId);
       const messageThreadId = parseTelegramThreadId(threadId);
       const result = await send(to, text, {
@@ -375,7 +383,9 @@ export const telegramPlugin: ChannelPlugin<ResolvedTelegramAccount, TelegramProb
       threadId,
       silent,
     }) => {
-      const send = deps?.sendTelegram ?? getTelegramRuntime().channel.telegram.sendMessageTelegram;
+      const send =
+        resolveOutboundSendDep<TelegramSendFn>(deps, "telegram") ??
+        getTelegramRuntime().channel.telegram.sendMessageTelegram;
       const replyToMessageId = parseTelegramReplyToMessageId(replyToId);
       const messageThreadId = parseTelegramThreadId(threadId);
       const result = await send(to, text, {

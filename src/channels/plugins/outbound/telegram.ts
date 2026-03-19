@@ -1,5 +1,8 @@
 import type { ReplyPayload } from "../../../auto-reply/types.js";
-import { resolveOutboundSendDep, type OutboundSendDeps } from "../../../infra/outbound/deliver.js";
+import {
+  resolveOutboundSendDep,
+  type OutboundSendDeps,
+} from "../../../infra/outbound/send-deps.js";
 import type { TelegramInlineButtons } from "../../../telegram/button-types.js";
 import { markdownToTelegramHtmlChunks } from "../../../telegram/format.js";
 import {

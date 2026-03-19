@@ -88,7 +88,7 @@ describe("matrixOutbound cfg threading", () => {
     );
   });
 
-  it("passes resolved cfg through injected deps.sendMatrix", async () => {
+  it("passes resolved cfg through channel-keyed matrix deps", async () => {
     const cfg = {
       channels: {
         matrix: {
@@ -105,7 +105,7 @@ describe("matrixOutbound cfg threading", () => {
       cfg,
       to: "room:!room:example",
       text: "hello via deps",
-      deps: { sendMatrix },
+      deps: { matrix: sendMatrix },
       accountId: "default",
       threadId: "$thread",
       replyToId: "$reply",

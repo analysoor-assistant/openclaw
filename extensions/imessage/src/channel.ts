@@ -29,7 +29,10 @@ import {
   type ChannelPlugin,
   type ResolvedIMessageAccount,
 } from "openclaw/plugin-sdk/imessage";
-import { resolveOutboundSendDep } from "../../../src/infra/outbound/send-deps.js";
+import {
+  resolveOutboundSendDep,
+  type OutboundSendDeps,
+} from "../../../src/infra/outbound/send-deps.js";
 import { getIMessageRuntime } from "./runtime.js";
 
 const meta = getChatChannelMeta("imessage");
@@ -59,11 +62,12 @@ async function sendIMessageOutbound(params: {
   mediaUrl?: string;
   mediaLocalRoots?: readonly string[];
   accountId?: string;
-  deps?: { sendIMessage?: IMessageSendFn };
+  deps?: OutboundSendDeps;
   replyToId?: string;
 }) {
   const send =
-    params.deps?.sendIMessage ?? getIMessageRuntime().channel.imessage.sendMessageIMessage;
+    resolveOutboundSendDep<IMessageSendFn>(params.deps, "imessage") ??
+    getIMessageRuntime().channel.imessage.sendMessageIMessage;
   const maxBytes = resolveChannelMediaMaxBytes({
     cfg: params.cfg,
     resolveChannelLimitMb: ({ cfg, accountId }) =>

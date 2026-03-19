@@ -30,7 +30,10 @@ import {
   type ChannelPlugin,
   type ResolvedSignalAccount,
 } from "openclaw/plugin-sdk/signal";
-import { resolveOutboundSendDep } from "../../../src/infra/outbound/send-deps.js";
+import {
+  resolveOutboundSendDep,
+  type OutboundSendDeps,
+} from "../../../src/infra/outbound/send-deps.js";
 import { getSignalRuntime } from "./runtime.js";
 
 const signalMessageActions: ChannelMessageActionAdapter = {
@@ -85,9 +88,11 @@ async function sendSignalOutbound(params: {
   mediaUrl?: string;
   mediaLocalRoots?: readonly string[];
   accountId?: string;
-  deps?: { sendSignal?: SignalSendFn };
+  deps?: OutboundSendDeps;
 }) {
-  const send = params.deps?.sendSignal ?? getSignalRuntime().channel.signal.sendMessageSignal;
+  const send =
+    resolveOutboundSendDep<SignalSendFn>(params.deps, "signal") ??
+    getSignalRuntime().channel.signal.sendMessageSignal;
   const maxBytes = resolveChannelMediaMaxBytes({
     cfg: params.cfg,
     resolveChannelLimitMb: ({ cfg, accountId }) =>

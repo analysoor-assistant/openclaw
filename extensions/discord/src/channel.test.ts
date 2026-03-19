@@ -33,4 +33,34 @@ describe("discordPlugin outbound", () => {
     );
     expect(result).toMatchObject({ channel: "discord", messageId: "m1" });
   });
+
+  it("uses channel-keyed outbound deps when provided", async () => {
+    const runtimeSend = vi.fn(async () => ({ messageId: "runtime" }));
+    const injectedSend = vi.fn(async () => ({ messageId: "dep" }));
+    setDiscordRuntime({
+      channel: {
+        discord: {
+          sendMessageDiscord: runtimeSend,
+        },
+      },
+    } as unknown as PluginRuntime);
+
+    const result = await discordPlugin.outbound!.sendText!({
+      cfg: {} as OpenClawConfig,
+      to: "channel:456",
+      text: "hello",
+      accountId: "work",
+      deps: { discord: injectedSend },
+    });
+
+    expect(injectedSend).toHaveBeenCalledWith(
+      "channel:456",
+      "hello",
+      expect.objectContaining({
+        accountId: "work",
+      }),
+    );
+    expect(runtimeSend).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ channel: "discord", messageId: "dep" });
+  });
 });
