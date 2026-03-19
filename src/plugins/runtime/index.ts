@@ -6,7 +6,6 @@ import {
 import { resolveStateDir } from "../../config/paths.js";
 import { transcribeAudioFile } from "../../media-understanding/transcribe-audio.js";
 import { textToSpeechTelephony } from "../../tts/tts.js";
-import { createRuntimeAgent } from "./runtime-agent.js";
 import { createRuntimeChannel } from "./runtime-channel.js";
 import { createRuntimeConfig } from "./runtime-config.js";
 import { createRuntimeEvents } from "./runtime-events.js";
@@ -128,7 +127,6 @@ export function createPluginRuntime(_options: CreatePluginRuntimeOptions = {}): 
   const runtime = {
     version: resolveVersion(),
     config: createRuntimeConfig(),
-    agent: createRuntimeAgent(),
     subagent: createLateBindingSubagent(
       _options.subagent,
       _options.allowGatewaySubagentBinding === true,

@@ -96,6 +96,16 @@ vi.mock("@mariozechner/pi-ai/oauth", () => ({
 }));
 
 vi.mock("@mariozechner/pi-coding-agent", () => {
+  class MockAuthStorage {
+    static inMemory() {
+      return {
+        setRuntimeApiKey: vi.fn(),
+      };
+    }
+  }
+
+  class MockModelRegistry {}
+
   return {
     createAgentSession: vi.fn(async () => {
       const session = {
@@ -133,6 +143,8 @@ vi.mock("@mariozechner/pi-coding-agent", () => {
     SettingsManager: {
       create: vi.fn(() => ({})),
     },
+    AuthStorage: MockAuthStorage,
+    ModelRegistry: MockModelRegistry,
     estimateTokens: estimateTokensMock,
   };
 });

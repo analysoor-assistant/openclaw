@@ -147,11 +147,7 @@ describe("agent components", () => {
     expect(reply).toHaveBeenCalledTimes(1);
     expect(reply.mock.calls[0]?.[0]?.content).toContain("Pairing code: PAIRCODE");
     expect(enqueueSystemEventMock).not.toHaveBeenCalled();
-    expect(readAllowFromStoreMock).toHaveBeenCalledWith({
-      provider: "discord",
-      accountId: "default",
-      dmPolicy: "pairing",
-    });
+    expect(readAllowFromStoreMock).toHaveBeenCalledWith("discord", expect.any(Object), "default");
   });
 
   it("blocks DM interactions in allowlist mode when sender is not in configured allowFrom", async () => {
@@ -185,11 +181,7 @@ describe("agent components", () => {
     expect(reply).toHaveBeenCalledWith({ content: "✓" });
     expect(enqueueSystemEventMock).toHaveBeenCalled();
     expect(upsertPairingRequestMock).not.toHaveBeenCalled();
-    expect(readAllowFromStoreMock).toHaveBeenCalledWith({
-      provider: "discord",
-      accountId: "default",
-      dmPolicy: "pairing",
-    });
+    expect(readAllowFromStoreMock).toHaveBeenCalledWith("discord", expect.any(Object), "default");
   });
 
   it("allows DM component interactions in open mode without reading pairing store", async () => {

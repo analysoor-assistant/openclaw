@@ -2,7 +2,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/account-id";
-import { resolveStateDir } from "openclaw/plugin-sdk/state-paths";
 import { tryGetMatrixRuntime } from "../runtime.js";
 
 export type MatrixStoredCredentials = {
@@ -30,7 +29,11 @@ export function resolveMatrixCredentialsDir(
 ): string {
   const runtime = tryGetMatrixRuntime();
   const resolvedStateDir =
-    stateDir ?? runtime?.state.resolveStateDir(env, os.homedir) ?? resolveStateDir(env, os.homedir);
+    stateDir ??
+    runtime?.state.resolveStateDir(env, os.homedir) ??
+    env.OPENCLAW_STATE_DIR?.trim() ??
+    env.CLAWDBOT_STATE_DIR?.trim() ??
+    path.join(os.homedir(), ".openclaw");
   return path.join(resolvedStateDir, "credentials", "matrix");
 }
 

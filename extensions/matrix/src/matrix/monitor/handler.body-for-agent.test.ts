@@ -15,8 +15,8 @@ const dispatchReplyFromConfigWithSettledDispatcherMock = vi.hoisted(() =>
   }),
 );
 
-vi.mock("../../../runtime-api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../runtime-api.js")>();
+vi.mock("openclaw/plugin-sdk/matrix", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/matrix")>();
   return {
     ...actual,
     dispatchReplyFromConfigWithSettledDispatcher: (...args: unknown[]) =>
