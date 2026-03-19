@@ -323,6 +323,7 @@ async function notifyContextEngineSubagentEnded(params: {
     ensureRuntimePluginsLoaded({
       config: cfg,
       workspaceDir: params.workspaceDir,
+      allowGatewaySubagentBinding: true,
     });
     ensureContextEnginesInitialized();
     const engine = await resolveContextEngine(cfg);

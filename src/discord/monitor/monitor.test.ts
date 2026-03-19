@@ -147,10 +147,10 @@ describe("agent components", () => {
     expect(reply).toHaveBeenCalledTimes(1);
     expect(reply.mock.calls[0]?.[0]?.content).toContain("Pairing code: PAIRCODE");
     expect(enqueueSystemEventMock).not.toHaveBeenCalled();
+    expect(readAllowFromStoreMock).toHaveBeenCalledWith("discord", expect.any(Object), "default");
   });
 
-  it("blocks DM interactions when only pairing store entries match in allowlist mode", async () => {
-    readAllowFromStoreMock.mockResolvedValue(["123456789"]);
+  it("blocks DM interactions in allowlist mode when sender is not in configured allowFrom", async () => {
     const button = createAgentComponentButton({
       cfg: createCfg(),
       accountId: "default",
@@ -162,6 +162,58 @@ describe("agent components", () => {
 
     expect(defer).toHaveBeenCalledWith({ ephemeral: true });
     expect(reply).toHaveBeenCalledWith({ content: "You are not authorized to use this button." });
+    expect(enqueueSystemEventMock).not.toHaveBeenCalled();
+    expect(readAllowFromStoreMock).not.toHaveBeenCalled();
+  });
+
+  it("authorizes DM interactions from pairing-store entries in pairing mode", async () => {
+    readAllowFromStoreMock.mockResolvedValue(["123456789"]);
+    const button = createAgentComponentButton({
+      cfg: createCfg(),
+      accountId: "default",
+      dmPolicy: "pairing",
+    });
+    const { interaction, defer, reply } = createDmButtonInteraction();
+
+    await button.run(interaction, { componentId: "hello" } as ComponentData);
+
+    expect(defer).toHaveBeenCalledWith({ ephemeral: true });
+    expect(reply).toHaveBeenCalledWith({ content: "✓" });
+    expect(enqueueSystemEventMock).toHaveBeenCalled();
+    expect(upsertPairingRequestMock).not.toHaveBeenCalled();
+    expect(readAllowFromStoreMock).toHaveBeenCalledWith("discord", expect.any(Object), "default");
+  });
+
+  it("allows DM component interactions in open mode without reading pairing store", async () => {
+    readAllowFromStoreMock.mockResolvedValue(["123456789"]);
+    const button = createAgentComponentButton({
+      cfg: createCfg(),
+      accountId: "default",
+      dmPolicy: "open",
+    });
+    const { interaction, defer, reply } = createDmButtonInteraction();
+
+    await button.run(interaction, { componentId: "hello" } as ComponentData);
+
+    expect(defer).toHaveBeenCalledWith({ ephemeral: true });
+    expect(reply).toHaveBeenCalledWith({ content: "✓" });
+    expect(enqueueSystemEventMock).toHaveBeenCalled();
+    expect(readAllowFromStoreMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks DM component interactions in disabled mode without reading pairing store", async () => {
+    readAllowFromStoreMock.mockResolvedValue(["123456789"]);
+    const button = createAgentComponentButton({
+      cfg: createCfg(),
+      accountId: "default",
+      dmPolicy: "disabled",
+    });
+    const { interaction, defer, reply } = createDmButtonInteraction();
+
+    await button.run(interaction, { componentId: "hello" } as ComponentData);
+
+    expect(defer).toHaveBeenCalledWith({ ephemeral: true });
+    expect(reply).toHaveBeenCalledWith({ content: "DM interactions are disabled." });
     expect(enqueueSystemEventMock).not.toHaveBeenCalled();
     expect(readAllowFromStoreMock).not.toHaveBeenCalled();
   });
@@ -181,6 +233,7 @@ describe("agent components", () => {
     expect(defer).toHaveBeenCalledWith({ ephemeral: true });
     expect(reply).toHaveBeenCalledWith({ content: "✓" });
     expect(enqueueSystemEventMock).toHaveBeenCalled();
+    expect(readAllowFromStoreMock).not.toHaveBeenCalled();
   });
 
   it("accepts cid payloads for agent button interactions", async () => {
@@ -200,6 +253,7 @@ describe("agent components", () => {
       expect.stringContaining("hello_cid"),
       expect.any(Object),
     );
+    expect(readAllowFromStoreMock).not.toHaveBeenCalled();
   });
 
   it("keeps malformed percent cid values without throwing", async () => {
@@ -219,6 +273,7 @@ describe("agent components", () => {
       expect.stringContaining("hello%2G"),
       expect.any(Object),
     );
+    expect(readAllowFromStoreMock).not.toHaveBeenCalled();
   });
 });
 

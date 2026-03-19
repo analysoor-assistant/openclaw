@@ -123,6 +123,9 @@ describe("outbound channel resolution", () => {
     expect(loadOpenClawPluginsMock).toHaveBeenCalledWith({
       config: { autoEnabled: true },
       workspaceDir: "/tmp/workspace",
+      runtimeOptions: {
+        allowGatewaySubagentBinding: true,
+      },
     });
 
     getChannelPluginMock.mockReturnValue(undefined);
@@ -131,6 +134,13 @@ describe("outbound channel resolution", () => {
       cfg: { channels: {} } as never,
     });
     expect(loadOpenClawPluginsMock).toHaveBeenCalledTimes(1);
+    expect(loadOpenClawPluginsMock).toHaveBeenLastCalledWith({
+      config: { autoEnabled: true },
+      workspaceDir: "/tmp/workspace",
+      runtimeOptions: {
+        allowGatewaySubagentBinding: true,
+      },
+    });
   });
 
   it("retries bootstrap after a transient load failure", async () => {
