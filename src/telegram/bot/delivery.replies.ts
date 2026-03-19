@@ -112,6 +112,7 @@ async function deliverTextReply(params: {
   replyMarkup?: ReturnType<typeof buildInlineKeyboard>;
   replyQuoteText?: string;
   linkPreview?: boolean;
+  silent?: boolean;
   replyToId?: number;
   replyToMode: ReplyToMode;
   progress: DeliveryProgress;
@@ -141,6 +142,7 @@ async function deliverTextReply(params: {
         textMode: "html",
         plainText: chunk.text,
         linkPreview: params.linkPreview,
+        silent: params.silent,
         replyMarkup: shouldAttachButtons ? params.replyMarkup : undefined,
       },
     );
@@ -162,6 +164,7 @@ async function sendPendingFollowUpText(params: {
   text: string;
   replyMarkup?: ReturnType<typeof buildInlineKeyboard>;
   linkPreview?: boolean;
+  silent?: boolean;
   replyToId?: number;
   replyToMode: ReplyToMode;
   progress: DeliveryProgress;
@@ -180,6 +183,7 @@ async function sendPendingFollowUpText(params: {
       textMode: "html",
       plainText: chunk.text,
       linkPreview: params.linkPreview,
+      silent: params.silent,
       replyMarkup: i === 0 ? params.replyMarkup : undefined,
     });
     markReplyApplied(params.progress, replyToForFollowUp);
@@ -210,6 +214,7 @@ async function sendTelegramVoiceFallbackText(opts: {
   replyToId?: number;
   thread?: TelegramThreadSpec | null;
   linkPreview?: boolean;
+  silent?: boolean;
   replyMarkup?: ReturnType<typeof buildInlineKeyboard>;
   replyQuoteText?: string;
 }): Promise<number | undefined> {
@@ -227,6 +232,7 @@ async function sendTelegramVoiceFallbackText(opts: {
       textMode: "html",
       plainText: chunk.text,
       linkPreview: opts.linkPreview,
+      silent: opts.silent,
       replyMarkup: !appliedReplyTo ? opts.replyMarkup : undefined,
     });
     if (firstDeliveredMessageId == null) {
@@ -251,6 +257,7 @@ async function deliverMediaReply(params: {
   chunkText: ChunkTextFn;
   onVoiceRecording?: () => Promise<void> | void;
   linkPreview?: boolean;
+  silent?: boolean;
   replyQuoteText?: string;
   replyMarkup?: ReturnType<typeof buildInlineKeyboard>;
   replyToId?: number;
@@ -296,6 +303,7 @@ async function deliverMediaReply(params: {
       ...buildTelegramSendParams({
         replyToMessageId,
         thread: params.thread,
+        silent: params.silent,
       }),
     };
     if (isGif) {
@@ -383,6 +391,7 @@ async function deliverMediaReply(params: {
               replyToId: voiceFallbackReplyTo,
               thread: params.thread,
               linkPreview: params.linkPreview,
+              silent: params.silent,
               replyMarkup: params.replyMarkup,
               replyQuoteText: params.replyQuoteText,
             });
@@ -423,6 +432,7 @@ async function deliverMediaReply(params: {
                 replyToId: undefined,
                 thread: params.thread,
                 linkPreview: params.linkPreview,
+                silent: params.silent,
                 replyMarkup: params.replyMarkup,
               });
             }
@@ -470,6 +480,7 @@ async function deliverMediaReply(params: {
         text: pendingFollowUpText,
         replyMarkup: params.replyMarkup,
         linkPreview: params.linkPreview,
+        silent: params.silent,
         replyToId: params.replyToId,
         replyToMode: params.replyToMode,
         progress: params.progress,
@@ -576,6 +587,8 @@ export async function deliverReplies(params: {
   onVoiceRecording?: () => Promise<void> | void;
   /** Controls whether link previews are shown. Default: true (previews enabled). */
   linkPreview?: boolean;
+  /** When true, messages are sent with disable_notification. */
+  silent?: boolean;
   /** Optional quote text for Telegram reply_parameters. */
   replyQuoteText?: string;
 }): Promise<{ delivered: boolean }> {
@@ -656,6 +669,7 @@ export async function deliverReplies(params: {
           replyMarkup,
           replyQuoteText: params.replyQuoteText,
           linkPreview: params.linkPreview,
+          silent: params.silent,
           replyToId,
           replyToMode: params.replyToMode,
           progress,
@@ -673,6 +687,7 @@ export async function deliverReplies(params: {
           chunkText,
           onVoiceRecording: params.onVoiceRecording,
           linkPreview: params.linkPreview,
+          silent: params.silent,
           replyQuoteText: params.replyQuoteText,
           replyMarkup,
           replyToId,
